@@ -1,5 +1,5 @@
 from __future__ import annotations
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel
 import json
 
 
@@ -26,6 +26,17 @@ class House(BaseModel):
         return f"<House {self.number}: {self.sign} {self.sign_degree:.2f}°>"
 
 
+class Aspect(BaseModel):
+    planet1: str
+    planet2: str
+    aspect: str            # "Conjunction", "Opposition" etc.
+    angle: float           # 実際の角度差 (0-180)
+    orb: float             # 正確な角度からのずれ
+
+    def __repr__(self) -> str:
+        return f"<Aspect {self.planet1} {self.aspect} {self.planet2} (orb {self.orb:+.2f}°)>"
+
+
 class ChartData(BaseModel):
     subject_name: str
     year: int
@@ -38,5 +49,6 @@ class ChartData(BaseModel):
     tz_str: str
     planets: list[Planet]
     houses: list[House]
+    aspects: list[Aspect]
     asc: float
     mc: float

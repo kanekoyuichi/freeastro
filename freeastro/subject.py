@@ -1,12 +1,11 @@
 from __future__ import annotations
 import json
-from functools import cached_property
 
 from ._utils.time import local_to_utc
 from ._ephemeris.engine import get_planet_positions, build_planets
 from ._ephemeris.houses import calculate_placidus_houses, build_houses
-from .constants import longitude_to_sign
-from .models import Planet, House, ChartData
+from .aspects import calculate_aspects
+from .models import Planet, House, Aspect, ChartData
 
 
 class AstrologicalSubject:
@@ -61,6 +60,7 @@ class AstrologicalSubject:
         raw = get_planet_positions(self._utc_dt, self.latitude, self.longitude)
         self._planets = build_planets(raw, cusps)
         self._planet_map = {p.name: p for p in self._planets}
+        self._aspects = calculate_aspects(self._planets)
         self._computed = True
 
     # --- 惑星プロパティ ---
@@ -116,6 +116,11 @@ class AstrologicalSubject:
         return self._planet_map["Pluto"]
 
     @property
+    def true_node(self) -> Planet:
+        self._ensure_computed()
+        return self._planet_map["True Node"]
+
+    @property
     def planets(self) -> list[Planet]:
         self._ensure_computed()
         return self._planets
@@ -142,6 +147,13 @@ class AstrologicalSubject:
         self._ensure_computed()
         return self._mc
 
+    # --- アスペクト ---
+
+    @property
+    def aspects(self) -> list[Aspect]:
+        self._ensure_computed()
+        return self._aspects
+
     # --- 出力 ---
 
     def to_dict(self) -> dict:
@@ -158,6 +170,7 @@ class AstrologicalSubject:
             tz_str=self.tz_str,
             planets=self._planets,
             houses=self._houses,
+            aspects=self._aspects,
             asc=self._asc,
             mc=self._mc,
         ).model_dump()

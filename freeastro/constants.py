@@ -9,6 +9,7 @@ SIGNS: list[str] = [
 PLANET_NAMES: list[str] = [
     "Sun", "Moon", "Mercury", "Venus", "Mars",
     "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto",
+    "True Node",
 ]
 
 # skyfield の惑星名マッピング

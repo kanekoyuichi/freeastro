@@ -1,6 +1,7 @@
 from __future__ import annotations
 import math
 from datetime import datetime
+from functools import lru_cache
 
 from skyfield.api import load
 from skyfield import framelib
@@ -37,7 +38,6 @@ def _calc_mc(ramc: float, eps: float) -> float:
     """MC の黄道経度（度）を算出"""
     mc = math.atan2(math.sin(ramc), math.cos(ramc) * math.cos(eps))
     mc_deg = math.degrees(mc) % 360.0
-    # RAMC と同じ半球に置く
     ramc_deg = math.degrees(ramc) % 360.0
     if ramc_deg >= 180.0 and mc_deg < 180.0:
         mc_deg += 180.0
@@ -48,14 +48,10 @@ def _calc_mc(ramc: float, eps: float) -> float:
 
 def _calc_asc(ramc: float, lat: float, eps: float) -> float:
     """ASC の黄道経度（度）を算出"""
-    # 標準 Placidus ASC 公式
-    # ASC = atan2(-cos(RAMC), sin(RAMC)×cos(ε) + tan(φ)×sin(ε))
     denom = math.sin(ramc) * math.cos(eps) + math.tan(lat) * math.sin(eps)
     asc = math.atan2(-math.cos(ramc), denom)
     asc_deg = math.degrees(asc) % 360.0
-    # ASC は MC より 90° 東（RA が大きい方向）にあるべき
     mc_deg = _calc_mc(ramc, eps)
-    # 東の地平線であることを保証
     if asc_deg < mc_deg:
         asc_deg += 180.0
     return asc_deg % 360.0
@@ -76,7 +72,6 @@ def _calc_intermediate_cusp(
     """
     TAU = 2 * math.pi
 
-    # 初期推定: RA として MC または IC 付近から開始
     if upper:
         initial_ra = (ramc + math.radians(fraction * 90.0)) % TAU
     else:
@@ -88,19 +83,15 @@ def _calc_intermediate_cusp(
         dec = math.asin(math.sin(eps) * math.sin(lon))
         cos_ha = -math.tan(lat) * math.tan(dec)
 
-        # 極地や高緯度で計算不能な場合は近似値を返す
         if abs(cos_ha) > 1.0:
             return math.degrees(lon) % 360.0
 
-        sd = math.acos(max(-1.0, min(1.0, cos_ha)))  # 昼弧（semi-diurnal arc）
+        sd = math.acos(max(-1.0, min(1.0, cos_ha)))
 
         if upper:
-            # H11, H12: MC から fraction × SD だけ ASC 方向へ
             target_ra = (ramc + fraction * sd) % TAU
         else:
-            # H2, H3 の Placidus 公式:
-            # MD(cusp from IC) = (1-fraction) × NA  →  RA = RAMC+180° - (1-fraction)×NA
-            na = math.pi - sd  # 夜弧 (nocturnal arc)
+            na = math.pi - sd
             target_ra = (ramc + math.pi - (1.0 - fraction) * na) % TAU
 
         new_lon = _ra_to_ecliptic_lon(target_ra, eps)
@@ -113,17 +104,18 @@ def _calc_intermediate_cusp(
     return math.degrees(lon) % 360.0
 
 
-def calculate_placidus_houses(
-    utc_dt: datetime,
+@lru_cache(maxsize=128)
+def _compute_placidus_houses(
+    jd_tt: float,
     latitude: float,
     longitude: float,
-) -> tuple[list[float], float, float]:
+) -> tuple[tuple[float, ...], float, float]:
     """
-    Placidus ハウスカスプを計算する。
-    戻り値: (cusps[0..11], asc, mc) — cusps[0]=H1カスプ, cusps[9]=H10(MC)
+    キャッシュ付き Placidus ハウス計算。
+    戻り値はタプル（lru_cache のため hashable にする）。
     """
     ts = _get_timescale()
-    t = ts.from_datetime(utc_dt)
+    t = ts.tt_jd(jd_tt)
 
     eps = _get_obliquity(t)
     gst = _greenwich_sidereal_time(t)
@@ -141,27 +133,36 @@ def calculate_placidus_houses(
     h2 = _calc_intermediate_cusp(ramc, lat, eps, 1.0 / 3.0, upper=False)
     h3 = _calc_intermediate_cusp(ramc, lat, eps, 2.0 / 3.0, upper=False)
 
-    # 反対ハウスは +180°
-    h5 = (h11 + 180.0) % 360.0
-    h6 = (h12 + 180.0) % 360.0
-    h8 = (h2 + 180.0) % 360.0
-    h9 = (h3 + 180.0) % 360.0
-
-    cusps = [
-        asc_lon,   # H1
-        h2,        # H2
-        h3,        # H3
-        ic_lon,    # H4
-        h5,        # H5
-        h6,        # H6
-        desc_lon,  # H7
-        h8,        # H8
-        h9,        # H9
-        mc_lon,    # H10
-        h11,       # H11
-        h12,       # H12
-    ]
+    cusps = (
+        asc_lon,                    # H1
+        h2,                         # H2
+        h3,                         # H3
+        ic_lon,                     # H4
+        (h11 + 180.0) % 360.0,     # H5
+        (h12 + 180.0) % 360.0,     # H6
+        desc_lon,                   # H7
+        (h2 + 180.0) % 360.0,      # H8
+        (h3 + 180.0) % 360.0,      # H9
+        mc_lon,                     # H10
+        h11,                        # H11
+        h12,                        # H12
+    )
     return cusps, asc_lon, mc_lon
+
+
+def calculate_placidus_houses(
+    utc_dt: datetime,
+    latitude: float,
+    longitude: float,
+) -> tuple[list[float], float, float]:
+    """
+    Placidus ハウスカスプを計算する。
+    戻り値: (cusps[0..11], asc, mc) — cusps[0]=H1カスプ, cusps[9]=H10(MC)
+    """
+    ts = _get_timescale()
+    t = ts.from_datetime(utc_dt)
+    cusps_tuple, asc, mc = _compute_placidus_houses(t.tt, latitude, longitude)
+    return list(cusps_tuple), asc, mc
 
 
 def build_houses(cusps: list[float]) -> list[House]:
