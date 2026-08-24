@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "freeastro"
-version = "0.2.0"
+version = "0.2.1"
 description = "A free, MIT-licensed Python astrology library for natal chart calculations"
 readme = "README.md"
 license = {text = "MIT"}
