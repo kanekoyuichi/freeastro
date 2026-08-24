@@ -176,11 +176,11 @@ Example JSON output (excerpt):
 
 | Field | Example | Meaning |
 |-------|---------|---------|
-| `planet1` | `"Sun"` | First planet |
-| `planet2` | `"Venus"` | Second planet |
-| `aspect` | `"Conjunction"` | Aspect type |
-| `angle` | `6.21` | Actual angular distance between planets (0–180) |
-| `orb` | `6.21` | Deviation from the exact aspect angle |
+| `planet1` | `"Moon"` | First planet |
+| `planet2` | `"Mercury"` | Second planet |
+| `aspect` | `"Trine"` | Aspect type |
+| `angle` | `119.09` | Actual angular distance between planets (0–180) |
+| `orb` | `-0.91` | How far off from the exact angle (Trine = 120°, so 119.09 − 120 = −0.91) |
 
 ## Troubleshooting
 
