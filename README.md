@@ -159,7 +159,7 @@ Example JSON output (excerpt):
 | `name` | `"Sun"` | Planet name |
 | `sign` | `"Capricorn"` | Zodiac sign the planet is in |
 | `sign_degree` | `24.70` | Degrees within that sign (0–30) |
-| `position` | `294.70` | Absolute ecliptic longitude (0–360) |
+| `position` | `294.70` | Absolute ecliptic longitude (0–360). For most uses, `sign` + `sign_degree` is enough. |
 | `house` | `9` | House number (1–12) |
 | `retrograde` | `False` | Whether the planet appears to move backward |
 
@@ -170,7 +170,7 @@ Example JSON output (excerpt):
 | `number` | `1` | House number (1–12) |
 | `sign` | `"Taurus"` | Zodiac sign of the house cusp |
 | `sign_degree` | `13.12` | Degrees within that sign (0–30) |
-| `position` | `43.12` | Absolute ecliptic longitude (0–360) |
+| `position` | `43.12` | Absolute ecliptic longitude (0–360). For most uses, `sign` + `sign_degree` is enough. |
 
 ### Aspect
 
