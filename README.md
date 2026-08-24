@@ -77,9 +77,32 @@ print(subject.saturn)
 print(subject.uranus)
 print(subject.neptune)
 print(subject.pluto)
+print(subject.true_node)  # Moon's True North Node
 ```
 
-### Step 3 — Read house cusps
+### Step 3 — Read aspects
+
+Aspects describe angular relationships between planets (e.g. a trine, a square).
+
+```python
+# All aspects in the chart
+for aspect in subject.aspects:
+    print(aspect)
+# <Aspect Moon Trine Mercury (orb -0.91°)>
+# <Aspect Sun Conjunction Venus (orb +6.21°)>
+# ...
+
+# Filter by type
+trines = [a for a in subject.aspects if a.aspect == "Trine"]
+
+# Check a specific pair
+sun_moon = [a for a in subject.aspects
+            if {a.planet1, a.planet2} == {"Sun", "Moon"}]
+```
+
+Supported aspects: Conjunction (0°), Opposition (180°), Trine (120°), Square (90°), Sextile (60°).
+
+### Step 4 — Read house cusps
 
 ```python
 # Ascendant (1st house cusp)
@@ -93,7 +116,7 @@ for house in subject.houses:
     print(f"House {house.number}: {house.sign} {house.sign_degree:.1f}°")
 ```
 
-### Step 4 — Export the data
+### Step 5 — Export the data
 
 ```python
 # As a Python dict
@@ -148,6 +171,16 @@ Example JSON output (excerpt):
 | `sign` | `"Taurus"` | Zodiac sign of the house cusp |
 | `sign_degree` | `13.12` | Degrees within that sign (0–30) |
 | `position` | `43.12` | Absolute ecliptic longitude (0–360) |
+
+### Aspect
+
+| Field | Example | Meaning |
+|-------|---------|---------|
+| `planet1` | `"Sun"` | First planet |
+| `planet2` | `"Venus"` | Second planet |
+| `aspect` | `"Conjunction"` | Aspect type |
+| `angle` | `6.21` | Actual angular distance between planets (0–180) |
+| `orb` | `6.21` | Deviation from the exact aspect angle |
 
 ## Troubleshooting
 

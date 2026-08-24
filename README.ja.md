@@ -69,16 +69,39 @@ print(subject.sun.house)        # 9（何ハウスにあるか）
 print(subject.mercury.retrograde)  # True
 
 # 取得できる天体
-print(subject.moon)     # 月
-print(subject.mercury)  # 水星
-print(subject.venus)    # 金星
-print(subject.mars)     # 火星
-print(subject.jupiter)  # 木星
-print(subject.saturn)   # 土星
-print(subject.uranus)   # 天王星
-print(subject.neptune)  # 海王星
-print(subject.pluto)    # 冥王星
+print(subject.moon)       # 月
+print(subject.mercury)    # 水星
+print(subject.venus)      # 金星
+print(subject.mars)       # 火星
+print(subject.jupiter)    # 木星
+print(subject.saturn)     # 土星
+print(subject.uranus)     # 天王星
+print(subject.neptune)    # 海王星
+print(subject.pluto)      # 冥王星
+print(subject.true_node)  # 月の真の昇交点
 ```
+
+### ステップ 3 — アスペクトを読み取る
+
+アスペクトとは、天体どうしの角度関係のことです（例：トライン、スクエアなど）。
+
+```python
+# チャート内の全アスペクト
+for aspect in subject.aspects:
+    print(aspect)
+# <Aspect Moon Trine Mercury (orb -0.91°)>
+# <Aspect Sun Conjunction Venus (orb +6.21°)>
+# ...
+
+# 種類で絞り込む
+trines = [a for a in subject.aspects if a.aspect == "Trine"]
+
+# 特定の天体ペアを確認する
+sun_moon = [a for a in subject.aspects
+            if {a.planet1, a.planet2} == {"Sun", "Moon"}]
+```
+
+対応アスペクト: Conjunction（合・0°）、Opposition（衝・180°）、Trine（三分・120°）、Square（四分・90°）、Sextile（六分・60°）
 
 **星座名は英語で返ってきます。** 日本語表記が必要な場合は、以下の対応表を参考にしてください。
 
@@ -91,7 +114,7 @@ print(subject.pluto)    # 冥王星
 | `Leo` | 獅子座 | `Aquarius` | 水瓶座 |
 | `Virgo` | 乙女座 | `Pisces` | 魚座 |
 
-### ステップ 3 — ハウスカスプを読み取る
+### ステップ 4 — ハウスカスプを読み取る
 
 ```python
 # アセンダント（第1ハウスのカスプ）
@@ -105,7 +128,7 @@ for house in subject.houses:
     print(f"第{house.number}ハウス: {house.sign} {house.sign_degree:.1f}°")
 ```
 
-### ステップ 4 — データをエクスポートする
+### ステップ 5 — データをエクスポートする
 
 ```python
 # Python の dict として取得
@@ -160,6 +183,16 @@ JSON 出力の例（抜粋）：
 | `sign` | `"Taurus"` | カスプの星座（英語名） |
 | `sign_degree` | `13.12` | 星座内の度数（0〜30） |
 | `position` | `43.12` | 黄道経度（0〜360の絶対値） |
+
+### Aspect（アスペクト）
+
+| フィールド | 例 | 意味 |
+|-----------|-----|------|
+| `planet1` | `"Sun"` | 天体1 |
+| `planet2` | `"Venus"` | 天体2 |
+| `aspect` | `"Conjunction"` | アスペクトの種類 |
+| `angle` | `6.21` | 天体間の実際の角度差（0〜180） |
+| `orb` | `6.21` | 正確な角度からのずれ |
 
 ## うまく動かないときは
 
